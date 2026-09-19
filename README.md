@@ -2,7 +2,7 @@
 
 一个用 AI 生成的单文件 HTML 作品集，由 GitHub Actions 自动扫描仓库并生成导航首页。
 
-👉 **[在线预览](https://你的用户名.github.io/你的仓库名/)**
+👉 **[在线预览](https://sylverqg.github.io/html_pages/)**
 
 ---
 
