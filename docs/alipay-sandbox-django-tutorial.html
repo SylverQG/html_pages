@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>支付宝沙箱 Django 实战手册</title>
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --fg: #1c2233;
+    --card: #ffffff;
+    --muted: #eef2f8;
+    --muted-fg: #5b6577;
+    --border: #dde4ee;
+    --primary: #1677ff;
+    --primary-fg: #ffffff;
+    --warn-fg: #7a4b12;
+    --warn-bg: #fdf3e3;
+    --warn-border: #f0d3a4;
+    --warn-rail: #e2a23d;
+    --ok-fg: #1c5c46;
+    --ok-bg: #e8f6ef;
+    --ok-border: #b6e0cd;
+    --code-bg: #1f2533;
+    --code-fg: #e8eaf0;
+    --code-muted: #98a2b8;
+    --code-border: #333b4f;
+    --grid: rgba(60, 90, 150, 0.12);
+    --sans: "IBM Plex Sans", "Noto Sans SC", -apple-system, BlinkMacSystemFont,
+      "PingFang SC", "Microsoft YaHei", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+      monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  a { color: var(--primary); }
+  code, pre { font-family: var(--mono); }
+  ::selection { background: var(--primary); color: #fff; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .hero .grid-lines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+    mask-image: linear-gradient(to bottom, #000, transparent);
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  .hero-inner { position: relative; padding: 56px 0; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--primary); margin: 0;
+  }
+  h1 {
+    margin: 12px 0 0; max-width: 760px; font-size: 34px; line-height: 1.16;
+    letter-spacing: -.02em;
+  }
+  .lead { max-width: 660px; margin: 16px 0 0; color: var(--muted-fg); font-size: 15px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 22px 0 0; }
+  .chips li {
+    border: 1px solid var(--border); background: var(--bg); border-radius: 999px;
+    padding: 4px 12px; font-family: var(--mono); font-size: 11px; color: var(--muted-fg);
+  }
+
+  .layout { display: grid; gap: 48px; padding: 48px 0 96px; }
+  @media (min-width: 1000px) { .layout { grid-template-columns: 236px minmax(0, 1fr); } }
+
+  .rail { display: none; }
+  @media (min-width: 1000px) { .rail { display: block; } }
+  .rail-sticky { position: sticky; top: 28px; }
+  .rail-label {
+    margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted-fg);
+  }
+  .rail-track { margin-top: 12px; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .rail-fill { height: 100%; width: 9%; background: var(--primary); border-radius: 999px; transition: width .3s ease; }
+  .rail ol { list-style: none; margin: 16px 0 0; padding: 0; }
+  .rail a {
+    display: flex; gap: 10px; align-items: baseline; padding: 6px 8px 6px 12px;
+    border-left: 2px solid transparent; color: var(--muted-fg); text-decoration: none;
+    font-size: 13.5px; transition: color .15s, border-color .15s, background .15s;
+  }
+  .rail a .no { font-family: var(--mono); font-size: 11px; }
+  .rail a:hover { color: var(--fg); border-left-color: var(--border); }
+  .rail a.active { color: var(--primary); border-left-color: var(--primary); background: rgba(22, 119, 255, .06); font-weight: 500; }
+
+  .card { border: 1px solid var(--border); background: var(--card); border-radius: 10px; padding: 20px; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .card-head h2 { margin: 0; font-size: 14px; }
+  .card-head .count { font-family: var(--mono); font-size: 11px; color: var(--muted-fg); }
+  .links { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+  @media (min-width: 640px) { .links { grid-template-columns: 1fr 1fr; gap: 0 16px; } }
+  .links a { display: block; padding: 8px; border-radius: 6px; text-decoration: none; }
+  .links a:hover { background: var(--muted); }
+  .links .label { color: var(--primary); font-weight: 500; font-size: 14px; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(22,119,255,.35); }
+  .links .note { display: block; margin-top: 2px; font-size: 12px; color: var(--muted-fg); }
+
+  .section-title { display: flex; align-items: center; gap: 12px; margin: 40px 0 0; }
+  .section-title h2 { margin: 0; font-size: 14px; white-space: nowrap; }
+  .section-title .line { flex: 1; height: 1px; background: var(--border); }
+  .flow { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
+  @media (min-width: 640px) { .flow { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1000px) { .flow { grid-template-columns: repeat(5, 1fr); } }
+  .flow li { position: relative; border: 1px solid var(--border); background: var(--card); border-radius: 10px; padding: 16px 14px 12px; }
+  .flow li::before { content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 2px; border-radius: 999px; background: var(--primary); }
+  .flow .no { position: absolute; right: 12px; top: 8px; font-family: var(--mono); font-size: 11px; color: var(--muted-fg); }
+  .flow .label { margin: 0; font-size: 14.5px; font-weight: 600; }
+  .flow .note { margin: 2px 0 0; font-size: 12px; color: var(--muted-fg); }
+
+  .steps { margin-top: 56px; display: grid; gap: 56px; }
+  .step { display: flex; gap: 20px; scroll-margin-top: 96px; }
+  .step-no {
+    flex: 0 0 auto; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(22,119,255,.3); background: rgba(22,119,255,.08); border-radius: 10px;
+    font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--primary);
+  }
+  .step-body { min-width: 0; flex: 1; }
+  .step h3 { margin: 4px 0 0; font-size: 20px; letter-spacing: -.01em; }
+  .step .kicker { margin: 4px 0 0; font-size: 13.5px; color: var(--muted-fg); }
+  .blocks { margin-top: 20px; display: grid; gap: 16px; }
+  .blocks p { margin: 0; font-size: 15px; color: rgba(28,34,51,.86); }
+  .blocks ul, .blocks ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 14.5px; color: rgba(28,34,51,.86); }
+  .blocks ol { list-style: decimal; }
+  .blocks li::marker { color: var(--primary); }
+  .blocks ol li::marker { font-family: var(--mono); font-size: 12px; }
+  .inline-code {
+    border: 1px solid var(--border); background: var(--muted); border-radius: 3px;
+    padding: 1px 6px; font-family: var(--mono); font-size: .84em;
+  }
+
+  .code { border: 1px solid var(--code-border); background: var(--code-bg); border-radius: 8px; overflow: hidden; margin: 0; }
+  .code-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 12px; border-bottom: 1px solid var(--code-border); }
+  .code-head .filename { font-family: var(--mono); font-size: 11px; color: var(--code-muted); letter-spacing: .02em; }
+  .copy {
+    border: 0; background: transparent; color: var(--code-muted); cursor: pointer;
+    font-family: var(--mono); font-size: 11px; padding: 4px 8px; border-radius: 4px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .copy:hover { background: var(--code-border); color: var(--code-fg); }
+  .code pre { margin: 0; padding: 14px 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.7; color: var(--code-fg); }
+
+  .callout { position: relative; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px 14px 20px; overflow: hidden; }
+  .callout::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+  .callout .tag { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+  .callout .title { margin: 6px 0 0; font-size: 14.5px; font-weight: 600; }
+  .callout .text { margin: 4px 0 0; font-size: 14px; color: rgba(28,34,51,.82); }
+  .callout.pitfall { background: var(--warn-bg); border-color: var(--warn-border); }
+  .callout.pitfall::before { background: var(--warn-rail); }
+  .callout.pitfall .tag { color: var(--warn-fg); }
+  .callout.tip { background: var(--ok-bg); border-color: var(--ok-border); }
+  .callout.tip::before { background: var(--ok-fg); }
+  .callout.tip .tag { color: var(--ok-fg); }
+  .callout.note { background: rgba(22,119,255,.05); border-color: rgba(22,119,255,.25); }
+  .callout.note::before { background: var(--primary); }
+  .callout.note .tag { color: var(--primary); }
+
+  .table-wrap { border: 1px solid var(--border); background: var(--card); border-radius: 10px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { text-align: left; background: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-fg); padding: 9px 12px; white-space: nowrap; }
+  td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: top; color: rgba(28,34,51,.78); }
+  td:first-child { font-weight: 500; color: var(--fg); }
+
+  .checklist { border: 1px solid var(--border); background: var(--card); border-radius: 10px; padding: 16px; }
+  .checklist .head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .checklist .head .title { font-size: 14px; font-weight: 600; }
+  .checklist .head .count { font-family: var(--mono); font-size: 11px; color: var(--muted-fg); }
+  .checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .checklist li { display: flex; gap: 12px; align-items: flex-start; }
+  .checklist input { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--primary); flex: 0 0 auto; }
+  .checklist label { font-size: 14.5px; color: rgba(28,34,51,.86); cursor: pointer; }
+  .checklist input:checked + label { color: var(--muted-fg); text-decoration: line-through; }
+
+  footer { margin-top: 64px; border-top: 1px solid var(--border); padding-top: 24px; }
+  footer p { margin: 0; font-size: 12.5px; color: var(--muted-fg); }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media print {
+    .rail, .copy { display: none; }
+    .layout { display: block; }
+    .step { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="grid-lines" aria-hidden="true"></div>
+  <div class="wrap hero-inner">
+    <p class="eyebrow">支付宝沙箱 · Django 实战手册</p>
+    <h1>从零跑通支付宝沙箱支付与异步回调</h1>
+    <p class="lead">面向个人开发者的逐步操作指南：进沙箱拿凭证、配 RSA2 密钥、Django 下单、验签回调到本地联调，每一步都有可复制的代码与坑点提醒。把这份手册开在编辑器旁边，跟着做一遍即可。</p>
+    <ul class="chips">
+      <li>适用 Django 4.x / 5.x</li>
+      <li>Python 3.9+</li>
+      <li>python-alipay-sdk</li>
+      <li>个人开发者可用</li>
+      <li>无需营业执照</li>
+    </ul>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <aside class="rail">
+    <div class="rail-sticky">
+      <p class="rail-label">施工顺序</p>
+      <div class="rail-track"><div class="rail-fill" id="railFill"></div></div>
+      <ol id="railList"></ol>
+    </div>
+  </aside>
+
+  <main>
+    <section class="card">
+      <div class="card-head">
+        <h2>官方入口速查</h2>
+        <span class="count">6 个链接</span>
+      </div>
+      <ul class="links">
+        <li><a href="https://open.alipay.com/develop/sandbox/app" target="_blank" rel="noreferrer"><span class="label">沙箱应用页</span><span class="note">拿 APPID、网关、沙箱买家账号</span></a></li>
+        <li><a href="https://opendocs.alipay.com/open/00dn7o" target="_blank" rel="noreferrer"><span class="label">沙箱调试说明</span><span class="note">支持接口列表、服务端代码配置</span></a></li>
+        <li><a href="https://opendocs.alipay.com/isv/03l8cj" target="_blank" rel="noreferrer"><span class="label">沙箱环境（接入指南）</span><span class="note">密钥、应用网关、网关地址配置</span></a></li>
+        <li><a href="https://opendocs.alipay.com/common/02kipk" target="_blank" rel="noreferrer"><span class="label">密钥工具下载</span><span class="note">生成 RSA2 密钥对</span></a></li>
+        <li><a href="https://opendocs.alipay.com/common/097pw5" target="_blank" rel="noreferrer"><span class="label">常见问题</span><span class="note">密钥/证书、老沙箱升级</span></a></li>
+        <li><a href="https://github.com/fzlee/alipay" target="_blank" rel="noreferrer"><span class="label">python-alipay-sdk</span><span class="note">社区最常用的 Python SDK</span></a></li>
+      </ul>
+    </section>
+
+    <div class="section-title"><h2>全链路一览</h2><span class="line"></span></div>
+    <ol class="flow">
+      <li><span class="no">01</span><p class="label">进入沙箱</p><p class="note">拿 APPID 与网关</p></li>
+      <li><span class="no">02</span><p class="label">配 RSA2 密钥</p><p class="note">应用私钥 / 支付宝公钥</p></li>
+      <li><span class="no">03</span><p class="label">Django 下单</p><p class="note">生成支付链接</p></li>
+      <li><span class="no">04</span><p class="label">支付宝付款</p><p class="note">沙箱买家账号</p></li>
+      <li><span class="no">05</span><p class="label">回调验签入账</p><p class="note">notify 是唯一可信源</p></li>
+    </ol>
+
+    <div class="steps" id="steps">
+
+      <!-- 00 -->
+      <section class="step" id="prepare">
+        <div class="step-no">00</div>
+        <div class="step-body">
+          <h3>开始之前：搞清楚沙箱是什么</h3>
+          <p class="kicker">个人开发者无需营业执照，也能跑通全链路</p>
+          <div class="blocks">
+            <p>沙箱是支付宝官方给开发者的、与生产环境完全隔离的联调测试环境。官方对它的三个特性和盘托出：使用账号不需要任何资质、账号不需要开通任何权限、调用不影响生产数据。所以本教程全程可以用一个普通个人支付宝账号完成。</p>
+            <div class="table-wrap"><table>
+              <thead><tr><th>阶段</th><th>需要什么</th><th>需要营业执照吗</th></tr></thead>
+              <tbody>
+                <tr><td>登录开放平台 / 进入沙箱</td><td>个人支付宝账号 + 实名认证</td><td>不需要</td></tr>
+                <tr><td>沙箱联调（下单 / 支付 / 回调 / 退款）</td><td>沙箱 APPID + 一对 RSA2 密钥</td><td>不需要</td></tr>
+                <tr><td>生产环境正式收款</td><td>签约具体支付产品</td><td>通常需要，视主体类型而定</td></tr>
+              </tbody>
+            </table></div>
+            <div class="callout note">
+              <p class="tag">说明</p>
+              <p class="title">沙箱不是生产环境</p>
+              <p class="text">沙箱并非 100% 与生产一致。沙箱返回的数据（如用户 ID）在生产环境并不存在；沙箱里跑通后，上线前仍需在生产环境验收。本教程只覆盖沙箱练习。</p>
+            </div>
+            <div class="checklist" data-checklist>
+              <div class="head"><span class="title">动手前请先确认</span><span class="count" data-count></span></div>
+              <ul>
+                <li><input type="checkbox" id="p1" /><label for="p1">一个可登录支付宝开放平台的账号（个人即可）</label></li>
+                <li><input type="checkbox" id="p2" /><label for="p2">本机已装 Python 3.9+ 与 Django（4.x / 5.x 均可）</label></li>
+                <li><input type="checkbox" id="p3" /><label for="p3">一个可用的内网穿透工具（本地联调回调必需）</label></li>
+                <li><input type="checkbox" id="p4" /><label for="p4">一个可以随意改动的 Django 练习项目</label></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01 -->
+      <section class="step" id="sandbox">
+        <div class="step-no">01</div>
+        <div class="step-body">
+          <h3>进入沙箱并创建应用</h3>
+          <p class="kicker">在沙箱控制台拿到 APPID、网关和买家账号</p>
+          <div class="blocks">
+            <ol>
+              <li>打开官方沙箱应用页并登录（手机支付宝扫码最快）。</li>
+              <li>若页面右上角出现「升级沙箱环境」入口，先升级——老沙箱正在逐步暂停维护，新接入直接用新沙箱。</li>
+              <li>进入 <code class="inline-code">开发信息</code>，确认接口加签方式为 <code class="inline-code">RSA2</code>，并选择「自定义密钥」。</li>
+              <li>在 <code class="inline-code">沙箱账号</code> 页找到买家账号与登录密码，付款时会用到。</li>
+            </ol>
+            <div class="table-wrap"><table>
+              <thead><tr><th>要记下的值</th><th>从哪里拿</th><th>后面用在哪</th></tr></thead>
+              <tbody>
+                <tr><td>沙箱 APPID</td><td>沙箱应用 · 开发信息</td><td>SDK 初始化 appid</td></tr>
+                <tr><td>支付宝网关</td><td>沙箱应用页</td><td>拼接支付跳转地址</td></tr>
+                <tr><td>沙箱买家账号 / 密码</td><td>沙箱账号页</td><td>付款时登录沙箱</td></tr>
+              </tbody>
+            </table></div>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">不要复用生产应用的 APPID</p>
+              <p class="text">沙箱有独立的 APPID 与网关，和生产环境完全不通用。混用会出现 <code class="inline-code">isv.invalid-app-id</code> 之类的报错。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section class="step" id="keys">
+        <div class="step-no">02</div>
+        <div class="step-body">
+          <h3>生成并配置 RSA2 密钥</h3>
+          <p class="kicker">先分清「应用公钥」和「支付宝公钥」</p>
+          <div class="blocks">
+            <p>支付宝要求用 RSA2 加签。可以用官方「支付宝开放平台开发助手」生成，也可以直接用命令行生成一对：</p>
+            <figure class="code">
+              <div class="code-head"><span class="filename">生成密钥对</span><button class="copy" type="button">复制</button></div>
+              <pre>openssl genrsa -out app_private_key.pem 2048
+openssl rsa -in app_private_key.pem -pubout -out app_public_key.pem</pre>
+            </figure>
+            <ol>
+              <li>把生成的 <code class="inline-code">app_public_key.pem</code>（应用公钥）内容粘贴到沙箱应用的自定义密钥里并保存。</li>
+              <li>保存后，页面会给出一个<strong>支付宝公钥</strong>，把它存成 <code class="inline-code">alipay_public_key.pem</code>。</li>
+              <li><code class="inline-code">app_private_key.pem</code>（应用私钥）留在你的项目里，用来给请求签名，绝不外传。</li>
+            </ol>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">验签失败的头号原因：两把公钥搞反了</p>
+              <p class="text"><code class="inline-code">app_private_key.pem</code> 是<strong>你自己</strong>的私钥；<code class="inline-code">alipay_public_key.pem</code> 是<strong>平台发给你的</strong>支付宝公钥。回调验签用的是支付宝公钥，不是你自己生成的那把。另外 <code class="inline-code">.pem</code> 文件头尾的 <code class="inline-code">-----BEGIN/END-----</code> 一行都不能少。</p>
+            </div>
+            <figure class="code">
+              <div class="code-head"><span class="filename">建议的目录结构</span><button class="copy" type="button">复制</button></div>
+              <pre>myproject/
+├── keys/
+│   ├── app_private_key.pem     # 你的应用私钥（保密）
+│   └── alipay_public_key.pem   # 平台给的支付宝公钥
+├── myproject/settings.py
+└── pay/views.py</pre>
+            </figure>
+            <div class="callout tip">
+              <p class="tag">技巧</p>
+              <p class="title">别把密钥提交进版本库</p>
+              <p class="text">在 <code class="inline-code">.gitignore</code> 中加入 <code class="inline-code">keys/</code>，或把密钥放进环境变量 / 密钥管理服务。私钥泄露等于别人可以冒充你的应用。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section class="step" id="django">
+        <div class="step-no">03</div>
+        <div class="step-body">
+          <h3>安装 SDK 并配置 Django</h3>
+          <p class="kicker">一处配置沙箱网关，全局复用</p>
+          <div class="blocks">
+            <figure class="code">
+              <div class="code-head"><span class="filename">安装依赖</span><button class="copy" type="button">复制</button></div>
+              <pre>pip install python-alipay-sdk</pre>
+            </figure>
+            <figure class="code">
+              <div class="code-head"><span class="filename">myproject/settings.py</span><button class="copy" type="button">复制</button></div>
+              <pre>from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+ALIPAY_APPID = "2021000000000000"   # 沙箱应用 APPID
+ALIPAY_GATEWAY = "https://openapi-sandbox.dl.alipaydev.com/gateway.do"
+ALIPAY_NOTIFY_URL = "https://your-tunnel.ngrok-free.app/api/alipay/notify/"
+ALIPAY_RETURN_URL = "https://example.com/pay/result/"
+
+APP_PRIVATE_KEY_PATH = BASE_DIR / "keys" / "app_private_key.pem"
+ALIPAY_PUBLIC_KEY_PATH = BASE_DIR / "keys" / "alipay_public_key.pem"</pre>
+            </figure>
+            <figure class="code">
+              <div class="code-head"><span class="filename">pay/utils/alipay.py —— 全局单例</span><button class="copy" type="button">复制</button></div>
+              <pre>from django.conf import settings
+from alipay import AliPay
+
+alipay = AliPay(
+    appid=settings.ALIPAY_APPID,
+    app_notify_url=settings.ALIPAY_NOTIFY_URL,
+    app_private_key_string=settings.APP_PRIVATE_KEY_PATH.read_text(),
+    alipay_public_key_string=settings.ALIPAY_PUBLIC_KEY_PATH.read_text(),
+    sign_type="RSA2",
+    debug=False,
+)
+
+# SDK 的 debug=True 指向的是旧沙箱网关，这里显式覆盖为新沙箱网关
+alipay._gateway = settings.ALIPAY_GATEWAY</pre>
+            </figure>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">网关地址必须和沙箱一致</p>
+              <p class="text"><code class="inline-code">python-alipay-sdk</code> 在 <code class="inline-code">debug=False</code> 时默认指向生产网关 <code class="inline-code">openapi.alipay.com</code>，在 <code class="inline-code">debug=True</code> 时指向旧沙箱网关。两种都不会自动变成新沙箱，所以要用 <code class="inline-code">alipay._gateway</code> 显式覆盖成 <code class="inline-code">ALIPAY_GATEWAY</code>。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section class="step" id="order">
+        <div class="step-no">04</div>
+        <div class="step-body">
+          <h3>下单视图：生成支付跳转</h3>
+          <p class="kicker">先在本地落一笔订单，再跳去支付宝</p>
+          <div class="blocks">
+            <p>支付的第一步是<strong>先在自己的库里创建订单</strong>，拿到唯一订单号 <code class="inline-code">out_trade_no</code>，然后用它向支付宝换取支付链接。</p>
+            <figure class="code">
+              <div class="code-head"><span class="filename">pay/models.py</span><button class="copy" type="button">复制</button></div>
+              <pre>from django.db import models
+
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "待支付"),
+        ("paid", "已支付"),
+        ("closed", "已关闭"),
+    ]
+
+    out_trade_no = models.CharField(max_length=64, unique=True)
+    subject = models.CharField(max_length=128)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=16, choices=STATUS_CHOICES, default="pending"
+    )
+    trade_no = models.CharField(max_length=64, blank=True)   # 支付宝交易号
+    paid_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)</pre>
+            </figure>
+            <figure class="code">
+              <div class="code-head"><span class="filename">pay/views.py —— 创建订单并跳转</span><button class="copy" type="button">复制</button></div>
+              <pre>import time
+import uuid
+from decimal import Decimal
+
+from django.conf import settings
+from django.shortcuts import redirect
+
+from .models import Order
+from .utils.alipay import alipay
+
+
+def create_order(request):
+    out_trade_no = time.strftime("%Y%m%d%H%M%S") + uuid.uuid4().hex[:6]
+    order = Order.objects.create(
+        out_trade_no=out_trade_no,
+        subject="沙箱测试订单",
+        amount=Decimal("0.01"),
+    )
+
+    order_string = alipay.api_alipay_trade_page_pay(
+        out_trade_no=order.out_trade_no,
+        total_amount=str(order.amount),      # 单位：元，必须是字符串
+        subject=order.subject,
+        return_url=settings.ALIPAY_RETURN_URL,
+        notify_url=settings.ALIPAY_NOTIFY_URL,
+    )
+
+    return redirect(alipay._gateway + "?" + order_string)</pre>
+            </figure>
+            <figure class="code">
+              <div class="code-head"><span class="filename">pay/urls.py</span><button class="copy" type="button">复制</button></div>
+              <pre>from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("pay/create/", views.create_order, name="pay-create"),
+    path("api/alipay/notify/", views.alipay_notify, name="alipay-notify"),
+]</pre>
+            </figure>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">total_amount 传 float 会挂</p>
+              <p class="text">金额单位是<strong>元</strong>，并必须以<strong>字符串</strong>传入。用 <code class="inline-code">Decimal</code> 存字段，传参时 <code class="inline-code">str(order.amount)</code>；不要传 <code class="inline-code">float</code>，也别带货币符号。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 -->
+      <section class="step" id="notify">
+        <div class="step-no">05</div>
+        <div class="step-body">
+          <h3>异步回调：验签、核账、幂等</h3>
+          <p class="kicker">notify_url 才是订单状态变化的唯一可信来源</p>
+          <div class="blocks">
+            <p>支付回调有两个地址，职责完全不同：<code class="inline-code">return_url</code>（同步）只是付款后浏览器跳回的页面，可以被绕过、用户也可能直接关掉，<strong>不能用来改订单状态</strong>；<code class="inline-code">notify_url</code>（异步）是支付宝服务器直接 POST 到你的后端，<strong>这才是唯一可信源</strong>。</p>
+            <figure class="code">
+              <div class="code-head"><span class="filename">pay/views.py —— 异步通知处理</span><button class="copy" type="button">复制</button></div>
+              <pre>import logging
+
+from django.conf import settings
+from django.db import transaction
+from django.http import HttpResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
+from .models import Order
+from .utils.alipay import alipay
+
+logger = logging.getLogger(__name__)
+
+
+def _plain(body):
+    return HttpResponse(body, content_type="text/plain")
+
+
+@csrf_exempt
+def alipay_notify(request):
+    if request.method != "POST":
+        return _plain("failure")
+
+    data = request.POST.dict()
+    signature = data.pop("sign", "")
+    data.pop("sign_type", None)
+
+    # 1) 验签：用的是「支付宝公钥」
+    if not alipay.verify(data, signature):
+        logger.warning("alipay notify 验签失败")
+        return _plain("failure")
+
+    # 2) 核对 app_id，防止串到别的应用
+    if data.get("app_id") != settings.ALIPAY_APPID:
+        logger.warning("app_id 不匹配: %s", data.get("app_id"))
+        return _plain("failure")
+
+    # 3) 只处理成功状态
+    if data.get("trade_status") not in ("TRADE_SUCCESS", "TRADE_FINISHED"):
+        return _plain("success")
+
+    out_trade_no = data.get("out_trade_no")
+
+    with transaction.atomic():
+        order = (
+            Order.objects.select_for_update()
+            .filter(out_trade_no=out_trade_no)
+            .first()
+        )
+        if order is None:
+            logger.error("订单不存在: %s", out_trade_no)
+            return _plain("failure")
+
+        # 4) 幂等：支付宝会重复推送同一条通知
+        if order.status == "paid":
+            return _plain("success")
+
+        # 5) 核对金额，别只看状态
+        if str(order.amount) != data.get("total_amount"):
+            logger.error(
+                "金额不匹配 %s != %s", order.amount, data.get("total_amount")
+            )
+            return _plain("failure")
+
+        order.status = "paid"
+        order.trade_no = data.get("trade_no", "")
+        order.paid_at = timezone.now()
+        order.save(update_fields=["status", "trade_no", "paid_at"])
+
+    # 6) 必须返回纯文本 success，否则支付宝会持续重推
+    return _plain("success")</pre>
+            </figure>
+            <ul>
+              <li><strong>验签</strong>：用支付宝公钥校验签名，签名不过直接拒绝。</li>
+              <li><strong>校 app_id</strong>：确认通知来自自己的应用。</li>
+              <li><strong>校金额</strong>：<code class="inline-code">total_amount</code> 是否与订单一致。</li>
+              <li><strong>幂等</strong>：先判断是否已支付，重复通知不重复发货。</li>
+              <li><strong>返回 success</strong>：处理成功必须回纯文本 <code class="inline-code">success</code>。</li>
+            </ul>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">视图必须 @csrf_exempt</p>
+              <p class="text">支付宝的 POST 没有 CSRF token，不豁免会被 Django 直接 403，表现为「回调一直没收到」或「验签前就失败」。</p>
+            </div>
+            <div class="callout pitfall">
+              <p class="tag">坑点</p>
+              <p class="title">返回内容不能是 HTML 或 JSON</p>
+              <p class="text">支付宝只认纯文本 <code class="inline-code">success</code>。返回 <code class="inline-code">{"ok": true}</code> 或带 BOM/空白的字符串，都会被判定为失败并触发重推。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 -->
+      <section class="step" id="tunnel">
+        <div class="step-no">06</div>
+        <div class="step-body">
+          <h3>内网穿透：让支付宝能回调到本地</h3>
+          <p class="kicker">127.0.0.1 无法被支付宝服务器访问</p>
+          <div class="blocks">
+            <p>本地开发的 <code class="inline-code">localhost:8000</code> 对支付宝服务器不可见，所以必须用内网穿透把本地端口暴露成公网地址，并把这个地址写进 <code class="inline-code">ALIPAY_NOTIFY_URL</code>。</p>
+            <figure class="code">
+              <div class="code-head"><span class="filename">以 ngrok 为例</span><button class="copy" type="button">复制</button></div>
+              <pre># 启动 Django
+python manage.py runserver 8000
+
+# 另开一个终端，把本地 8000 暴露到公网
+ngrok http 8000</pre>
+            </figure>
+            <ul>
+              <li>把 ngrok 给出的公网地址填写到 <code class="inline-code">settings.ALIPAY_NOTIFY_URL</code>，路径与路由一致（如 <code class="inline-code">/api/alipay/notify/</code>）。</li>
+              <li>免费隧道地址每次重启都会变，改完记得同步更新配置并重启 Django。</li>
+              <li>确认该地址公网可直接访问，且返回的不是 Django 的 403 / 404。</li>
+            </ul>
+            <div class="callout tip">
+              <p class="tag">技巧</p>
+              <p class="title">先自测一次可达性</p>
+              <p class="text">用 <code class="inline-code">curl -X POST https://你的隧道地址/api/alipay/notify/</code> 打一次，若返回 <code class="inline-code">failure</code>（而不是超时或 403），说明链路已经通了。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 -->
+      <section class="step" id="e2e">
+        <div class="step-no">07</div>
+        <div class="step-body">
+          <h3>联调实测：完整走一遍支付</h3>
+          <p class="kicker">用沙箱买家账号真实付款并观察回调</p>
+          <div class="blocks">
+            <ol>
+              <li>浏览器访问 <code class="inline-code">/pay/create/</code>，会被重定向到支付宝沙箱收银台。</li>
+              <li>用<strong>沙箱买家账号</strong>登录并付款（不是你的正式支付宝账号）。</li>
+              <li>付款成功后观察 Django 控制台：<code class="inline-code">notify</code> 视图是否被 POST 调用、日志里有没有「验签失败」。</li>
+              <li>回数据库看订单 <code class="inline-code">status</code> 是否变为 <code class="inline-code">paid</code>、<code class="inline-code">trade_no</code> / <code class="inline-code">paid_at</code> 是否写入。</li>
+              <li>在沙箱控制台对同一订单发起一次退款，验证退款链路（注意沙箱限制）。</li>
+            </ol>
+            <div class="table-wrap"><table>
+              <thead><tr><th>观察点</th><th>预期结果</th></tr></thead>
+              <tbody>
+                <tr><td>支付页是否正常打开</td><td>显示沙箱收银台，金额与订单一致</td></tr>
+                <tr><td>notify 是否被调用</td><td>控制台出现 POST 请求日志</td></tr>
+                <tr><td>验签</td><td>无「验签失败」告警</td></tr>
+                <tr><td>订单状态</td><td>由 pending 变为 paid，写入 trade_no / paid_at</td></tr>
+                <tr><td>重复通知</td><td>再次收到同订单通知时不会重复处理</td></tr>
+              </tbody>
+            </table></div>
+            <div class="callout note">
+              <p class="tag">说明</p>
+              <p class="title">沙箱的退款限制</p>
+              <p class="text">沙箱环境里，退款金额必须与支付金额<strong>完全一致</strong>，且每笔订单<strong>只支持调用一次退款接口</strong>。练习时别按「部分退款 / 多次退款」去设计用例。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 -->
+      <section class="step" id="pitfalls">
+        <div class="step-no">08</div>
+        <div class="step-body">
+          <h3>常见坑速查</h3>
+          <p class="kicker">报错对照表，先查这里</p>
+          <div class="blocks">
+            <div class="table-wrap"><table>
+              <thead><tr><th>现象</th><th>可能原因</th><th>怎么处理</th></tr></thead>
+              <tbody>
+                <tr><td>验签失败 / invalid-signature</td><td>「应用公钥」被当成了「支付宝公钥」</td><td>私钥用你生成的，支付宝公钥用平台给的那把</td></tr>
+                <tr><td>isv.invalid-app-id</td><td>用了生产或旧沙箱的 APPID / 网关</td><td>确认 APPID 与网关都来自沙箱应用页</td></tr>
+                <tr><td>回调一直没触发</td><td>notify_url 非公网可达，或被 CSRF 拦截</td><td>检查内网穿透地址，给视图加 @csrf_exempt</td></tr>
+                <tr><td>同一通知被反复重推</td><td>处理完没返回纯文本 success</td><td>成功时返回 HttpResponse("success", content_type="text/plain")</td></tr>
+                <tr><td>订单被重复置为已支付</td><td>没有做幂等判断</td><td>先查订单状态，已支付就直接返回 success</td></tr>
+                <tr><td>金额相关报错</td><td>total_amount 传了 float 或带货币符号</td><td>用 Decimal 存，传 str(order.amount)，单位元</td></tr>
+                <tr><td>沙箱退款失败</td><td>退款金额与支付不一致，或已退过</td><td>沙箱要求金额相等，且每单只能退一次</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 -->
+      <section class="step" id="checklist">
+        <div class="step-no">09</div>
+        <div class="step-body">
+          <h3>上线前检查清单</h3>
+          <p class="kicker">从沙箱走向生产前，逐条确认</p>
+          <div class="blocks">
+            <div class="checklist" data-checklist>
+              <div class="head"><span class="title">交付自检</span><span class="count" data-count></span></div>
+              <ul>
+                <li><input type="checkbox" id="c1" /><label for="c1">沙箱应用页的 APPID、网关、密钥三者一致且已核对</label></li>
+                <li><input type="checkbox" id="c2" /><label for="c2">keys/ 已加入 .gitignore，密钥未提交到版本库</label></li>
+                <li><input type="checkbox" id="c3" /><label for="c3">notify 视图已 @csrf_exempt，且只返回 success / failure</label></li>
+                <li><input type="checkbox" id="c4" /><label for="c4">订单状态只由 notify 驱动，return_url 仅用于展示结果</label></li>
+                <li><input type="checkbox" id="c5" /><label for="c5">回调已做验签 + app_id + 金额 三重校验</label></li>
+                <li><input type="checkbox" id="c6" /><label for="c6">订单更新已做幂等，重复通知不会重复发货</label></li>
+                <li><input type="checkbox" id="c7" /><label for="c7">已用沙箱买家账号真实走通一次「下单 → 支付 → 回调 → 已支付」</label></li>
+              </ul>
+            </div>
+            <div class="callout note">
+              <p class="tag">说明</p>
+              <p class="title">沙箱跑通 ≠ 生产可用</p>
+              <p class="text">本教程只覆盖沙箱练习。生产环境需要签约具体支付产品、使用正式 APPID 与网关，并按官方要求重新验收。切换时把 <code class="inline-code">ALIPAY_APPID</code>、<code class="inline-code">ALIPAY_GATEWAY</code>、密钥和回调域名整体替换即可。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer>
+      <p>本手册仅覆盖支付宝沙箱环境的练习流程，示例代码为最小可运行实现。接入生产环境前，请以 <a href="https://opendocs.alipay.com/" target="_blank" rel="noreferrer">支付宝官方文档</a> 为准重新验收。</p>
+    </footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    // 代码复制
+    document.querySelectorAll(".code").forEach(function (figure) {
+      var button = figure.querySelector(".copy");
+      var pre = figure.querySelector("pre");
+      if (!button || !pre) return;
+      button.addEventListener("click", function () {
+        var text = pre.textContent;
+        var done = function () {
+          button.textContent = "已复制";
+          window.setTimeout(function () { button.textContent = "复制"; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () {});
+        } else {
+          var area = document.createElement("textarea");
+          area.value = text;
+          document.body.appendChild(area);
+          area.select();
+          try { document.execCommand("copy"); done(); } catch (e) {}
+          document.body.removeChild(area);
+        }
+      });
+    });
+
+    // 检查清单
+    document.querySelectorAll("[data-checklist]").forEach(function (box) {
+      var inputs = box.querySelectorAll("input[type=checkbox]");
+      var counter = box.querySelector("[data-count]");
+      var update = function () {
+        var n = 0;
+        inputs.forEach(function (input) { if (input.checked) n += 1; });
+        if (counter) counter.textContent = n + " / " + inputs.length;
+      };
+      inputs.forEach(function (input) { input.addEventListener("change", update); });
+      update();
+    });
+
+    // 侧边步骤轨
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+    var railList = document.getElementById("railList");
+    var railFill = document.getElementById("railFill");
+    if (!railList || !railFill || !steps.length) return;
+
+    steps.forEach(function (step) {
+      var heading = step.querySelector("h3");
+      var number = step.querySelector(".step-no");
+      var li = document.createElement("li");
+      var link = document.createElement("a");
+      link.href = "#" + step.id;
+      link.innerHTML =
+        '<span class="no">' + (number ? number.textContent : "") + "</span>" +
+        "<span>" + (heading ? heading.textContent : step.id) + "</span>";
+      li.appendChild(link);
+      railList.appendChild(li);
+    });
+
+    var links = railList.querySelectorAll("a");
+    var setActive = function (id) {
+      var index = 0;
+      steps.forEach(function (step, i) { if (step.id === id) index = i; });
+      links.forEach(function (link) {
+        var step = steps[index];
+        link.classList.toggle(
+          "active",
+          step && link.getAttribute("href") === "#" + step.id
+        );
+      });
+      railFill.style.width = ((index + 1) / steps.length) * 100 + "%";
+    };
+
+    var observer = new IntersectionObserver(function (entries) {
+      var visible = entries
+        .filter(function (entry) { return entry.isIntersecting; })
+        .sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
+      if (visible[0]) setActive(visible[0].target.id);
+    }, { rootMargin: "-12% 0px -72% 0px", threshold: 0 });
+
+    steps.forEach(function (step) { observer.observe(step); });
+    setActive(steps[0].id);
+  })();
+</script>
+</body>
+</html>
