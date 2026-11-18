@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 现代爬虫 · 从入门到求职（后端开发者定制版）</title>
+<style>
+:root{
+  --bg:#f6f8fb; --sidebar:#111827; --sidebar-text:#cbd5e1; --sidebar-active:#fff;
+  --primary:#4f46e5; --primary-2:#7c3aed; --primary-soft:#eef2ff;
+  --text:#1f2937; --muted:#6b7280; --border:#e5e7eb; --card:#ffffff;
+  --code-bg:#0d1117; --code-text:#e6edf3;
+  --tip:#0ea5e9; --tip-bg:#e0f2fe; --warn:#f59e0b; --warn-bg:#fef3c7;
+  --iv:#dc2626; --iv-bg:#fef2f2; --ok:#16a34a; --ok-bg:#dcfce7;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.75;font-size:15px}
+a{color:var(--primary);text-decoration:none}
+
+/* 侧边栏 */
+.sidebar{position:fixed;left:0;top:0;width:288px;height:100vh;background:var(--sidebar);color:var(--sidebar-text);overflow-y:auto;z-index:50;padding:26px 0 40px}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}
+.brand{padding:0 24px 18px;border-bottom:1px solid #1f2937;margin-bottom:14px}
+.brand .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#fff}
+.brand .logo .dot{width:10px;height:10px;border-radius:3px;background:linear-gradient(135deg,var(--primary),var(--primary-2))}
+.brand .sub{font-size:12px;color:#94a3b8;margin-top:6px}
+.nav-group{padding:10px 0 2px}
+.nav-group .gt{font-size:11px;letter-spacing:1.5px;color:#64748b;padding:8px 24px;text-transform:uppercase;font-weight:700}
+.sidebar a{display:block;padding:7px 24px 7px 26px;color:var(--sidebar-text);font-size:13.5px;border-left:3px solid transparent;transition:.18s}
+.sidebar a:hover{background:#1f2937;color:#fff}
+.sidebar a.active{background:linear-gradient(90deg,rgba(79,70,229,.25),transparent);color:var(--sidebar-active);border-left-color:var(--primary);font-weight:600}
+
+/* 主内容 */
+.main{margin-left:288px;padding:0 0 100px}
+.wrap{max-width:920px;margin:0 auto;padding:0 44px}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#9333ea 100%);color:#fff;padding:60px 0 54px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.07)}
+.hero::before{content:"";position:absolute;right:60px;bottom:-120px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06)}
+.hero .wrap{position:relative;z-index:2}
+.hero .kicker{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:5px 14px;border-radius:20px;font-size:12.5px;letter-spacing:.5px;margin-bottom:18px}
+.hero h1{font-size:38px;line-height:1.25;margin:0 0 14px;font-weight:800;letter-spacing:-.5px}
+.hero p{font-size:16px;opacity:.93;max-width:660px;margin:0 0 24px}
+.hero .chips{display:flex;gap:10px;flex-wrap:wrap}
+.hero .chips span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:6px 14px;border-radius:8px;font-size:13px}
+
+/* 通用区块 */
+section{padding-top:46px}
+.section-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:14px}
+.badge{flex:none;width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;box-shadow:0 6px 16px rgba(79,70,229,.25)}
+.section-head h2{margin:0;font-size:25px;line-height:1.3;letter-spacing:-.3px}
+.section-head .desc{color:var(--muted);font-size:13.5px;margin-top:3px}
+h3{font-size:18.5px;margin:30px 0 12px;padding-left:12px;border-left:4px solid var(--primary)}
+h4{font-size:15.5px;margin:20px 0 8px;color:#374151}
+p{margin:10px 0}
+ul,ol{padding-left:22px;margin:10px 0}
+li{margin:6px 0}
+strong{color:#111827}
+
+/* 提示框 */
+.box{border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14px;border-left:4px solid;line-height:1.7}
+.box .bt{font-weight:700;display:block;margin-bottom:4px;font-size:13.5px;letter-spacing:.3px}
+.box.interview{background:var(--iv-bg);border-color:var(--iv);color:#7f1d1d}
+.box.interview .bt{color:var(--iv)}
+.box.tip{background:var(--tip-bg);border-color:var(--tip);color:#075985}
+.box.warn{background:var(--warn-bg);border-color:var(--warn);color:#92400e}
+.box.ok{background:var(--ok-bg);border-color:var(--ok);color:#14532d}
+
+/* 卡片网格 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin:20px 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;transition:.2s}
+.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.07);border-color:#c7d2fe}
+.card .ic{font-size:22px;margin-bottom:8px}
+.card h4{margin:0 0 6px;font-size:15.5px;color:#111827}
+.card p{margin:0;font-size:13.5px;color:var(--muted)}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;margin:18px 0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);font-size:14px}
+th{background:#f3f4f6;text-align:left;padding:12px 14px;font-weight:700;color:#374151;border-bottom:2px solid var(--border)}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f3;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;background:var(--primary-soft);color:var(--primary);padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600;margin:2px 3px 2px 0}
+.tag.g{background:var(--ok-bg);color:var(--ok)}.tag.r{background:var(--iv-bg);color:var(--iv)}.tag.y{background:var(--warn-bg);color:#b45309}
+
+/* 代码 */
+pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:18px 20px;overflow-x:auto;margin:16px 0;font-size:13.3px;line-height:1.65;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+pre code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;background:none;padding:0}
+code.inline{background:#eef0f4;color:#b91c1c;padding:2px 6px;border-radius:5px;font-size:13px;font-family:"SFMono-Regular",Consolas,monospace}
+.c-keyword{color:#ff7b72}.c-string{color:#a5d6ff}.c-comment{color:#8b949e;font-style:italic}.c-num{color:#79c0ff}.c-deco{color:#d2a8ff}
+.code-cap{font-size:12px;color:var(--muted);margin:-8px 0 14px;font-style:italic}
+
+/* 步骤 / 时间线 */
+.steps{counter-reset:step;margin:18px 0}
+.step{position:relative;padding:0 0 22px 52px;counter-increment:step}
+.step::before{content:counter(step);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.step::after{content:"";position:absolute;left:15px;top:34px;bottom:0;width:2px;background:var(--border)}
+.step:last-child::after{display:none}
+.step h4{margin:3px 0 5px}
+
+/* 其它 */
+.divider{height:1px;background:var(--border);margin:40px 0}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.pill.new{background:var(--ok-bg);color:var(--ok)}
+.pill.hot{background:var(--iv-bg);color:var(--iv)}
+.toc-inline{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:18px 0}
+.toc-inline a{display:inline-block;margin:4px 14px 4px 0;font-size:13.5px}
+.top-btn{position:fixed;right:26px;bottom:26px;width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(79,70,229,.4);opacity:0;transition:.3s;z-index:40}
+.top-btn.show{opacity:1}
+.footer{text-align:center;color:var(--muted);font-size:13px;padding:40px 0 10px;border-top:1px solid var(--border);margin-top:50px}
+@media(max-width:960px){.sidebar{display:none}.main{margin-left:0}.wrap{padding:0 20px}.hero h1{font-size:29px}}
+</style>
+</head>
+<body>
+
+<!-- ============ 侧边栏导航 ============ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo"><span class="dot"></span>现代爬虫 · 求职手册</div>
+    <div class="sub">Python 后端开发者定制版 · 2026</div>
+  </div>
+  <div class="nav-group">
+    <div class="gt">导读</div>
+    <a href="#intro">写在前面 & 岗位技能地图</a>
+  </div>
+  <div class="nav-group">
+    <div class="gt">基础与核心</div>
+    <a href="#p0">0 · 合规与职业红线</a>
+    <a href="#p1">1 · HTTP 网络基础复盘</a>
+    <a href="#p2">2 · 抓取库与异步并发</a>
+    <a href="#p3">3 · 数据解析技术</a>
+  </div>
+  <div class="nav-group">
+    <div class="gt">进阶与工程</div>
+    <a href="#p4">4 · 动态页面与浏览器</a>
+    <a href="#p5">5 · Scrapy 框架与分布式</a>
+    <a href="#p6">6 · 反爬与反反爬</a>
+    <a href="#p7">7 · 存储与工程化部署</a>
+  </div>
+  <div class="nav-group">
+    <div class="gt">求职实战</div>
+    <a href="#p8">8 · 简历级实战项目</a>
+    <a href="#p9">9 · 高频面试题库</a>
+    <a href="#p10">10 · 8 周学习计划 & 资源</a>
+  </div>
+</aside>
+
+<!-- ============ 主内容 ============ -->
+<div class="main">
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="kicker">CAREER-ORIENTED · 面向 2026 求职市场</span>
+      <h1>Python 现代爬虫<br>从入门到求职</h1>
+      <p>定制需求: 已具备 Python 后端开发经验，跳过语言基础，聚焦爬虫工程体系、企业级框架、反爬对抗与面试竞争力，用最短路径达到岗位要求。</p>
+      <div class="chips">
+        <span>🎯 岗位技能导向</span>
+        <span>⚙️ 工程化 & 分布式</span>
+        <span>🧪 简历级实战项目</span>
+        <span>💬 高频面试题精讲</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+  <!-- ============ 导读 ============ -->
+  <section id="intro">
+    <div class="section-head">
+      <div class="badge">序</div>
+      <div><h2>写在前面 & 岗位技能地图</h2><div class="desc">先看清目标，再决定学什么、学到什么程度</div></div>
+    </div>
+
+    <div class="box ok">
+      <span class="bt">起点优势</span>
+      已有 Python 后端经验，意味着<strong>语言语法、HTTP 基础、数据库、异步/并发、Linux、Git</strong> 这些都不用从零学。爬虫求职的差距主要在四个新维度：<strong>抓取策略、解析与渲染、反爬对抗、分布式调度工程</strong>。本手册把 80% 篇幅放在这四块。
+    </div>
+
+    <h3>招聘 JD 高频技能 → 本手册对应章节</h3>
+    <table>
+      <thead><tr><th>岗位常见要求</th><th>掌握程度</th><th>对应章节</th><th>面试出现率</th></tr></thead>
+      <tbody>
+        <tr><td>熟练 requests / httpx / aiohttp</td><td><span class="tag g">必须熟练</span></td><td>第 2 章</td><td><span class="pill hot">极高</span></td></tr>
+        <tr><td>HTML 解析、XPath / CSS 选择器</td><td><span class="tag g">必须熟练</span></td><td>第 3 章</td><td><span class="pill hot">极高</span></td></tr>
+        <tr><td>Scrapy 框架、中间件、Pipeline</td><td><span class="tag g">必须熟练</span></td><td>第 5 章</td><td><span class="pill hot">极高</span></td></tr>
+        <tr><td>Playwright / Selenium 动态渲染</td><td><span class="tag y">熟练加分</span></td><td>第 4 章</td><td><span class="pill hot">高</span></td></tr>
+        <tr><td>代理 IP、UA 池、验证码、限速</td><td><span class="tag y">熟练加分</span></td><td>第 6 章</td><td><span class="pill hot">高</span></td></tr>
+        <tr><td>JS 逆向、签名参数破解</td><td><span class="tag r">进阶/高薪</span></td><td>第 6 章</td><td><span class="pill new">中高</span></td></tr>
+        <tr><td>分布式（scrapy-redis / Kafka）</td><td><span class="tag y">中高级岗</span></td><td>第 5、7 章</td><td><span class="pill new">中</span></td></tr>
+        <tr><td>MySQL / MongoDB / Redis / ES</td><td><span class="tag g">必须熟练</span></td><td>第 7 章</td><td><span class="pill hot">高</span></td></tr>
+        <tr><td>Docker 部署、定时任务、监控</td><td><span class="tag y">工程加分</span></td><td>第 7 章</td><td><span class="pill new">中</span></td></tr>
+        <tr><td>合规意识（robots / 数据安全法）</td><td><span class="tag g">必谈</span></td><td>第 0 章</td><td><span class="pill hot">高</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="toc-inline">
+      <strong>快速跳转：</strong>
+      <a href="#p0">合规</a>·<a href="#p1">HTTP</a>·<a href="#p2">抓取库</a>·<a href="#p3">解析</a>·<a href="#p4">动态页面</a>·<a href="#p5">Scrapy</a>·<a href="#p6">反爬</a>·<a href="#p7">工程化</a>·<a href="#p8">实战项目</a>·<a href="#p9">面试题</a>·<a href="#p10">学习计划</a>
+    </div>
+  </section>
+
+  <!-- ============ Part 0 ============ -->
+  <section id="p0">
+    <div class="section-head">
+      <div class="badge">0</div>
+      <div><h2>合规与职业红线</h2><div class="desc">入行第一课：知道什么不能爬，比知道怎么爬更重要</div></div>
+    </div>
+
+    <p>现代爬虫岗位面试，<strong>合规意识几乎是必问题</strong>。企业不想招一个会把公司送上法庭的人。这一章看似"软"，实则是求职硬通货。</p>
+
+    <h3>1. 必须了解的法律与规范</h3>
+    <table>
+      <thead><tr><th>法规 / 规范</th><th>与爬虫的关系</th></tr></thead>
+      <tbody>
+        <tr><td>《网络安全法》</td><td>禁止非法侵入网络、干扰网络正常功能；不得窃取个人信息。</td></tr>
+        <tr><td>《数据安全法》</td><td>数据分级分类，重要数据不得擅自采集、交易。</td></tr>
+        <tr><td>《个人信息保护法》(PIPL)</td><td>采集姓名/手机/身份证/人脸等个人信息需授权，敏感信息需单独同意。</td></tr>
+        <tr><td>《刑法》285/286 条</td><td>非法获取计算机信息系统数据罪、破坏计算机信息系统罪——绕过技术保护措施可能触犯。</td></tr>
+        <tr><td>robots.txt</td><td>行业惯例，声明抓取意愿；虽然不具强制法律效力，但违反是重要负面信号。</td></tr>
+        <tr><td>网站用户协议 / ToS</td><td>合同中常明确禁止自动化访问，违约可构成不正当竞争。</td></tr>
+      </tbody>
+    </table>
+
+    <div class="box warn">
+      <span class="bt">⚠️ 绝对不要碰的红线</span>
+      ① 绕过登录/权限抓取用户隐私数据；② 破解验证码批量注册/撞库；③ 抓取后贩卖、泄露个人信息；④ 高频请求导致对方服务瘫痪（可能构成破坏计算机信息系统罪）；⑤ 金融、医疗、未成年人敏感数据。这些不是"技术挑战"，是刑事风险。
+    </div>
+
+    <h3>2. 合规爬取的自检清单</h3>
+    <ul>
+      <li><strong>先看后爬：</strong>检查 <code class="inline">robots.txt</code>、网站 ToS、是否有开放 API（优先用 API）。</li>
+      <li><strong>最小必要：</strong>只采集业务必需的字段，不采个人敏感信息。</li>
+      <li><strong>控制频率：</strong>设置合理延时与并发上限，遵守对方承载能力，避开高峰。</li>
+      <li><strong>表明身份：</strong>UA 中如实标注爬虫与联系方式（便于对方联系）。</li>
+      <li><strong>数据用途合法：</strong>采集数据仅用于约定用途，妥善存储、脱敏、定期删除。</li>
+    </ul>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问："你如何保证爬虫合规？"</span>
+      参考答法：先讲 <strong>robots.txt 与 ToS 检查 → 优先官方 API → 最小必要字段与脱敏 → 频率控制与限速 → 数据合规存储与用途限定 → 遇到明确禁止则停止</strong>。再补一句"我会评估商业与法律风险，必要时让法务介入"。这套回答在绝大多数公司都能拿分。
+    </div>
+  </section>
+
+  <!-- ============ Part 1 ============ -->
+  <section id="p1">
+    <div class="section-head">
+      <div class="badge">1</div>
+      <div><h2>HTTP 网络基础复盘</h2><div class="desc">后端出身的你大概率懂，这里只聚焦爬虫视角的特殊关注点</div></div>
+    </div>
+
+    <h3>爬虫最该关注的 HTTP 要点</h3>
+    <div class="grid">
+      <div class="card"><div class="ic">🔁</div><h4>状态码</h4><p>2xx 成功；3xx 重定向（小心循环重定向）；4xx（403 反爬、404 失效、429 限流）；5xx 服务端错误需重试。</p></div>
+      <div class="card"><div class="ic">📋</div><h4>请求头</h4><p>User-Agent、Referer、Accept-Language、Cookie、X-Requested-With 都是反爬识别点，缺一不可。</p></div>
+      <div class="card"><div class="ic">🍪</div><h4>Cookie / Session</h4><p>维持登录态的关键；理解 Session 复用、Cookie Jar 自动管理、Token 刷新机制。</p></div>
+      <div class="card"><div class="ic">🔐</div><h4>HTTPS / TLS</h4><p>证书校验、TLS 指纹（JA3/JA4）已成为高级反爬手段，后面章节会讲应对。</p></div>
+    </div>
+
+    <h3>请求响应模型（爬虫视角）</h3>
+    <pre><code class="language-python"># 一次请求 = 方法 + URL + Headers + Body + Cookie
+# 一次响应 = 状态码 + Headers + Cookie + Body(HTML/JSON/二进制)
+
+import httpx
+
+resp = httpx.get(
+    "https://example.com/api/list",
+    headers={"User-Agent": "Mozilla/5.0 ...", "Referer": "https://example.com/"},
+    params={"page": 1, "size": 20},
+    timeout=10,
+)
+print(resp.status_code, resp.url, resp.headers.get("content-type"))
+print(resp.text)        # 文本（HTML/JSON 字符串）
+print(resp.json())      # 自动解析 JSON
+print(resp.content)     # 二进制（图片/文件）</code></pre>
+    <p class="code-cap">理解 resp 的各属性，是后续一切解析与存储的前提。</p>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① 301 与 302 的区别？重定向对爬虫有什么坑？（循环重定向、POST 变 GET）<br>
+      ② HTTP/1.1 与 HTTP/2 对爬虫的影响？（HTTP/2 多路复用、头部压缩，指纹特征不同）<br>
+      ③ 什么是 Cookie 与 Session 的关系？如何维持登录态？<br>
+      ④ 遇到 403 / 429 你会怎么排查？（UA、Cookie、Referer、频率、IP 是否被封）
+    </div>
+  </section>
+
+  <!-- ============ Part 2 ============ -->
+  <section id="p2">
+    <div class="section-head">
+      <div class="badge">2</div>
+      <div><h2>抓取库与异步并发</h2><div class="desc">从 requests 到 httpx / aiohttp，构建高并发抓取能力</div></div>
+    </div>
+
+    <h3>技术选型：2026 年该用哪个？</h3>
+    <table>
+      <thead><tr><th>库</th><th>特点</th><th>适用场景</th><th>建议</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">requests</code></td><td>同步、生态成熟、简单稳定</td><td>小规模、低频、Demo、调试</td><td>必会，但新项目不首选</td></tr>
+        <tr><td><code class="inline">httpx</code> <span class="pill new">现代首选</span></td><td>同步/异步双支持、HTTP/2、类型提示完善</td><td>新项目、需要处理 HTTP/2</td><td>重点掌握</td></tr>
+        <tr><td><code class="inline">aiohttp</code></td><td>纯异步、性能高、生态久</td><td>高并发异步爬虫</td><td>了解 + 会用</td></tr>
+        <tr><td><code class="inline">curl_cffi</code> <span class="pill hot">反爬利器</span></td><td>模拟真实浏览器 TLS/JA3 指纹</td><td>对抗 TLS 指纹检测的站点</td><td>进阶必知</td></tr>
+      </tbody>
+    </table>
+
+    <h3>从 requests 到 httpx 的平滑迁移</h3>
+    <pre><code class="language-python">import httpx
+
+# 同步 client（复用连接池，比逐个 get 高效）
+with httpx.Client(
+    headers={"User-Agent": "Mozilla/5.0 ..."},
+    timeout=httpx.Timeout(10.0),
+    follow_redirects=True,
+) as client:
+    r = client.get("https://example.com", params={"q": "python"})
+    print(r.status_code, r.text[:200])</code></pre>
+
+    <h3>异步并发：爬虫性能的分水岭</h3>
+    <p>爬虫是典型的 <strong>I/O 密集型</strong>任务——大部分时间花在等网络响应。用异步/concurrent 可以把等待时间重叠起来，吞吐提升一个数量级。</p>
+    <pre><code class="language-python">import asyncio, httpx
+
+urls = [f"https://example.com/page/{i}" for i in range(100)]
+
+async def fetch(client, url):
+    try:
+        r = await client.get(url)
+        return url, r.status_code, r.text[:100]
+    except httpx.RequestError as e:
+        return url, "ERR", str(e)
+
+async def main():
+    limits = httpx.Limits(max_connections=20)  # 控制并发，别把对方打挂
+    async with httpx.AsyncClient(limits=limits, timeout=10) as client:
+        tasks = [fetch(client, u) for u in urls]
+        results = await asyncio.gather(*tasks)
+    for u, s, t in results:
+        print(s, u)
+
+asyncio.run(main())</code></pre>
+    <p class="code-cap">要点：用 Semaphore 或 Limits 控制并发数；配合重试与限速；异常不要让它中断整个任务。</p>
+
+    <h3>生产级请求必备三件套</h3>
+    <ul>
+      <li><strong>重试：</strong><code class="inline">httpx</code> 配合 <code class="inline">tenacity</code>，对 5xx/超时做指数退避重试。</li>
+      <li><strong>超时：</strong>一定设置 connect/read/write/pool 分段超时，防止任务永久挂起。</li>
+      <li><strong>限速：</strong>用 <code class="inline">asyncio.Sleep</code> 或令牌桶，控制 QPS，既是礼貌也是防封。</li>
+    </ul>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① 同步爬虫和异步爬虫的区别？为什么爬虫适合异步？（I/O 密集、协程切换开销小）<br>
+      ② 协程和线程/进程的区别？GIL 对爬虫的影响？（I/O 释放 GIL，协程更轻量）<br>
+      ③ 如何控制并发数避免被封？（Semaphore / 连接池上限 / 令牌桶限速）<br>
+      ④ requests 的 Session 有什么用？（连接复用、自动管理 Cookie）
+    </div>
+  </section>
+
+  <!-- ============ Part 3 ============ -->
+  <section id="p3">
+    <div class="section-head">
+      <div class="badge">3</div>
+      <div><h2>数据解析技术</h2><div class="desc">拿到 HTML/JSON 后，如何稳定、准确地抽取结构化数据</div></div>
+    </div>
+
+    <h3>解析库选型</h3>
+    <table>
+      <thead><tr><th>库</th><th>语法</th><th>速度</th><th>适用</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">BeautifulSoup4</code></td><td>CSS 选择器 / find</td><td>较慢（可用 lxml 解析器加速）</td><td>入门友好、脏 HTML 容错强</td></tr>
+        <tr><td><code class="inline">lxml</code></td><td>XPath / CSS</td><td>快（C 实现）</td><td>大规模、性能敏感</td></tr>
+        <tr><td><code class="inline">parsel</code> <span class="pill new">推荐</span></td><td>XPath / CSS / 正则 一体</td><td>快（基于 lxml）</td><td>Scrapy 生态、工程首选</td></tr>
+        <tr><td><code class="inline">json / jsonpath</code></td><td>JSONPath</td><td>极快</td><td>接口型数据（现在是主流）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="box tip">
+      <span class="bt">💡 现代趋势：优先找接口，而不是啃 HTML</span>
+      越来越多站点前端通过 <strong>XHR/Fetch 调用 JSON 接口</strong>渲染数据。用浏览器开发者工具的 Network 面板找到真实接口，直接请求 JSON，比解析 HTML 稳定得多、体积小得多。这是求职时体现"工程思维"的关键点。
+    </div>
+
+    <h3>CSS 与 XPath 对照（重点掌握）</h3>
+    <pre><code class="language-python">from parsel import Selector
+
+html = """
+<div class="item" id="p1">
+  <a class="title" href="/detail/1">Python 爬虫实战</a>
+  <span class="price">￥99</span>
+</div>
+"""
+sel = Selector(html)
+
+# CSS 选择器
+sel.css("a.title::text").get()          # 'Python 爬虫实战'
+sel.css("a.title::attr(href)").get()     # '/detail/1'
+sel.css("div.item").getall()             # 所有 div.item 节点
+
+# XPath（更灵活，可向上/兄弟轴）
+sel.xpath("//div[@class='item']/a/text()").get()
+sel.xpath("//a[@class='title']/@href").get()
+sel.xpath("//span[contains(@class,'price')]/text()").get()
+
+# 提取列表并结构化
+for item in sel.css("div.item"):
+    print({
+        "title": item.css("a.title::text").get(),
+        "url":   item.css("a.title::attr(href)").get(),
+        "price": item.css("span.price::text").get(),
+    })</code></pre>
+    <p class="code-cap">::text 取文本，::attr() 取属性；XPath 用 /text() 与 /@attr。两套都要会。</p>
+
+    <h3>正则表达式（兜底与清洗）</h3>
+    <pre><code class="language-python">import re
+text = "订单号：NO.20260118-8899，金额：￥1,299.00"
+
+m = re.search(r"NO\.(\d{8}-\d+)", text)
+order = m.group(1) if m else None          # '20260118-8899'
+amount = re.search(r"￥([\d,]+(?:\.\d{2})?)", text).group(1)  # '1,299.00'
+clean = re.sub(r"[^\d.]", "", amount)      # '1299.00'</code></pre>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① CSS 选择器与 XPath 各有什么优劣？什么场景用哪个？<br>
+      ② 页面结构经常变动，如何提升解析的健壮性？（优先接口、多重兜底选择器、避免绝对层级路径）<br>
+      ③ 如何处理 HTML 中的乱码？（响应头 charset、apparent_encoding、编码探测 chardet）<br>
+      ④ 遇到嵌套 iframe / Shadow DOM 怎么取数据？（切换 frame / Playwright 的 shadow DOM 支持）
+    </div>
+  </section>
+
+  <!-- ============ Part 4 ============ -->
+  <section id="p4">
+    <div class="section-head">
+      <div class="badge">4</div>
+      <div><h2>动态页面与浏览器自动化</h2><div class="desc">当数据由 JavaScript 渲染时，如何优雅地拿到它</div></div>
+    </div>
+
+    <h3>什么时候才需要浏览器？</h3>
+    <p>很多爬虫性能问题，根源是<strong>滥用无头浏览器</strong>。正确顺序是：</p>
+    <ol>
+      <li>先看 Network 有没有直接的 JSON 接口 → 有就直接请求（最快最稳）；</li>
+      <li>看 HTML 源码里是否已内嵌数据（如 <code class="inline">window.__INITIAL_STATE__</code>）→ 解析它；</li>
+      <li>以上都不行，再上 Playwright 渲染。</li>
+    </ol>
+    <div class="box warn">
+      <span class="bt">⚠️ 性能提醒</span>
+      无头浏览器内存/CPU 开销是 requests 的几十倍，速度慢一个数量级。生产环境把它当"最后手段"，并做好浏览器实例复用、页面池化、并发控制。
+    </div>
+
+    <h3>Playwright（现代首选） vs Selenium</h3>
+    <table>
+      <thead><tr><th>维度</th><th>Playwright</th><th>Selenium</th></tr></thead>
+      <tbody>
+        <tr><td>架构</td><td>新一代，CDP 原生，跨浏览器（Chromium/Firefox/WebKit）</td><td>老牌，WebDriver 协议</td></tr>
+        <tr><td>速度 & 稳定性</td><td>快、自动等待机制好</td><td>相对慢，需手动等待</td></tr>
+        <tr><td>异步支持</td><td>原生 async API</td><td>有限</td></tr>
+        <tr><td>反检测</td><td>生态好（ stealth 插件、CDP 隐藏指纹）</td><td>一般</td></tr>
+        <tr><td>建议</td><td><span class="pill new">新项目首选</span></td><td>老项目维护、兼容性场景</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Playwright 实战模板</h3>
+    <pre><code class="language-python">from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    ctx = browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...",
+        viewport={"width": 1280, "height": 800},
+        locale="zh-CN",
+    )
+    page = ctx.new_page()
+    page.goto("https://example.com", wait_until="networkidle")
+
+    # 等待关键元素出现
+    page.wait_for_selector(".item")
+    titles = page.locator(".item .title").all_text_contents()
+
+    # 拦截接口响应，直接拿 JSON（高级技巧）
+    with page.expect_response("**/api/list**") as resp_info:
+        page.click("button.load-more")
+    data = resp_info.value.json()
+
+    ctx.close(); browser.close()</code></pre>
+    <p class="code-cap">技巧：用 expect_response / page.on("response") 直接捕获接口数据，跳过 DOM 解析。</p>
+
+    <h3>反检测基础（浏览器指纹对抗）</h3>
+    <ul>
+      <li>隐藏 <code class="inline">navigator.webdriver</code> 等自动化特征（stealth 脚本 / CDP 注入）。</li>
+      <li>伪造 UA、屏幕分辨率、时区、语言、WebGL / Canvas 指纹。</li>
+      <li>模拟真人行为：随机滚动、鼠标移动、点击间隔（对抗行为分析）。</li>
+      <li>复用 Cookie / 登录态，避免每次都是"新访客"。</li>
+    </ul>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① Selenium 与 Playwright 的区别？为什么选 Playwright？<br>
+      ② 网站如何检测你是无头浏览器？你会怎么绕过？（webdriver 标记、指纹、行为特征）<br>
+      ③ 动态页面一定要用浏览器吗？还有哪些方案？（找接口、解析内嵌状态、渲染服务）<br>
+      ④ 用无头浏览器如何提升性能？（复用 context、并发池、禁用图片加载、减少等待）
+    </div>
+  </section>
+
+  <!-- ============ Part 5 ============ -->
+  <section id="p5">
+    <div class="section-head">
+      <div class="badge">5</div>
+      <div><h2>Scrapy 框架与分布式</h2><div class="desc">企业级爬虫的标配框架，中高级岗位的分水岭</div></div>
+    </div>
+
+    <div class="box ok">
+      <span class="bt">✅ 为什么说 Scrapy 是求职必会</span>
+      招聘 JD 里出现频率最高的框架，没有之一。它把调度、去重、重试、并发、管道化存储、中间件扩展全部工程化。会用 requests 是"会写脚本"，会用 Scrapy 才叫"会做爬虫工程"。
+    </div>
+
+    <h3>Scrapy 架构（务必理解数据流）</h3>
+    <table>
+      <thead><tr><th>组件</th><th>职责</th><th>面试要点</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Engine</strong></td><td>核心引擎，驱动各组件间的数据流</td><td>协调整体</td></tr>
+        <tr><td><strong>Scheduler</strong></td><td>请求队列 + 去重</td><td>指纹去重原理（request fingerprint）</td></tr>
+        <tr><td><strong>Downloader</strong></td><td>发起请求，返回 Response</td><td>异步基于 Twisted</td></tr>
+        <tr><td><strong>Spider</strong></td><td>解析响应，产出 Item 或新 Request</td><td>你写的主要逻辑</td></tr>
+        <tr><td><strong>Item Pipeline</strong></td><td>清洗、校验、去重、入库</td><td>链式处理，可配置优先级</td></tr>
+        <tr><td><strong>Downloader Middleware</strong></td><td>请求前/响应后挂钩（UA、代理、重试）</td><td><span class="pill hot">高频考点</span></td></tr>
+        <tr><td><strong>Spider Middleware</strong></td><td>处理 Spider 输入/输出（如变形请求）</td><td>较少用</td></tr>
+      </tbody>
+    </table>
+
+    <h3>核心代码示例</h3>
+    <p><strong>items.py</strong> —— 定义数据结构：</p>
+    <pre><code class="language-python">import scrapy
+
+class ProductItem(scrapy.Item):
+    title = scrapy.Field()
+    price = scrapy.Field()
+    url = scrapy.Field()
+    source = scrapy.Field()</code></pre>
+
+    <p><strong>spider</strong> —— 解析并产出：</p>
+    <pre><code class="language-python">import scrapy
+from myproj.items import ProductItem
+
+class ProductSpider(scrapy.Spider):
+    name = "product"
+    start_urls = ["https://example.com/list"]
+
+    custom_settings = {"DOWNLOAD_DELAY": 1, "CONCURRENT_REQUESTS": 8}
+
+    def parse(self, response):
+        for box in response.css("div.item"):
+            yield ProductItem(
+                title=box.css("a.title::text").get(),
+                price=box.css("span.price::text").get(),
+                url=response.urljoin(box.css("a::attr(href)").get()),
+                source="example",
+            )
+        # 翻页：构造下一页请求，回调自身
+        nxt = response.css("a.next::attr(href)").get()
+        if nxt:
+            yield response.follow(nxt, callback=self.parse)</code></pre>
+
+    <p><strong>pipelines.py</strong> —— 清洗与入库：</p>
+    <pre><code class="language-python">class CleanPipeline:
+    def process_item(self, item, spider):
+        if item.get("price"):
+            item["price"] = item["price"].replace("￥", "").replace(",", "")
+        return item  # 必须 return，否则后续 Pipeline 收不到
+
+class MysqlPipeline:
+    def open_spider(self, spider):
+        self.conn = ...  # 建立连接
+    def process_item(self, item, spider):
+        # 写入数据库
+        return item
+    def close_spider(self, spider):
+        self.conn.close()</code></pre>
+
+    <h3>中间件：UA 与代理的经典写法</h3>
+    <pre><code class="language-python">import random
+class RotateMiddleware:
+    def __init__(self, uas):
+        self.uas = uas
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings.getlist("USER_AGENTS"))
+    def process_request(self, request, spider):
+        request.headers["User-Agent"] = random.choice(self.uas)
+        # 代理：request.meta["proxy"] = "http://ip:port"</code></pre>
+
+    <h3>分布式爬虫：scrapy-redis</h3>
+    <p>当单机不够用时，用 Redis 作为共享的请求队列与去重集合，多台机器协同抓取：</p>
+    <ul>
+      <li><code class="inline">Scheduler</code> 换成 Redis 队列 → 多机共享待抓任务；</li>
+      <li><code class="inline">DUPEFILTER_CLASS</code> 换成 Redis 去重 → 多机共享已抓指纹，避免重复；</li>
+      <li>主节点负责产出初始请求（seed），从节点消费队列。</li>
+    </ul>
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① Scrapy 的数据流是怎样的？请描述一个 Request 从产生到入库的全过程。<br>
+      ② Scrapy 如何实现去重？（请求指纹 + 集合；分布式用 Redis set）<br>
+      ③ Downloader Middleware 与 Spider Middleware 的区别？分别在什么阶段生效？<br>
+      ④ settings.py 中 DOWNLOAD_DELAY、CONCURRENT_REQUESTS、AUTOTHROTTLE 的作用与关系？<br>
+      ⑤ Scrapy-redis 的分布式的原理？为什么用 Redis？（高性能队列、去重集合共享）
+    </div>
+  </section>
+
+  <!-- ============ Part 6 ============ -->
+  <section id="p6">
+    <div class="section-head">
+      <div class="badge">6</div>
+      <div><h2>反爬与反反爬</h2><div class="desc">面试区分度最高的模块，也是高薪岗位的核心竞争力</div></div>
+    </div>
+
+    <h3>反爬手段全景 vs 应对策略</h3>
+    <table>
+      <thead><tr><th>反爬类型</th><th>具体表现</th><th>应对策略</th></tr></thead>
+      <tbody>
+        <tr><td>请求头检测</td><td>UA、Referer、Accept、Cookie 缺失</td><td>构造完整头、UA 池、维护登录态</td></tr>
+        <tr><td>IP 限制</td><td>单 IP 频率过高封禁</td><td>代理 IP 池（住宅/机房）、限速、轮换</td></tr>
+        <tr><td>验证码</td><td>图形、滑块、点选、无感验证</td><td>OCR、打码平台、行为模拟、复用 Cookie</td></tr>
+        <tr><td>JS 挑战</td><td>签名参数、加密 Cookie、加速乐等</td><td>JS 逆向（execjs / Node 执行）、hook、补环境</td></tr>
+        <tr><td>行为分析</td><td>鼠标轨迹、访问节奏、页面停留</td><td>模拟真人行为、随机化间隔</td></tr>
+        <tr><td>指纹检测</td><td>Canvas/WebGL、TLS/JA3、字体指纹</td><td>stealth、curl_cffi、定制浏览器环境</td></tr>
+      </tbody>
+    </table>
+
+    <h3>代理 IP 池设计（工程重点）</h3>
+    <ul>
+      <li><strong>来源：</strong>机房代理（便宜、易被识别）、住宅代理（贵、更真实）、隧道代理（自动轮换）。</li>
+      <li><strong>调度：</strong>按权重/响应速度分配，失败自动剔除，定期健康检测。</li>
+      <li><strong>成本控制：</strong>按量付费场景要精确计算所需 IP 数与请求成功率。</li>
+    </ul>
+
+    <h3>JS 逆向入门（进阶/高薪方向）</h3>
+    <p>当关键参数由 JS 生成时，需要逆向。基本套路：</p>
+    <div class="steps">
+      <div class="step"><h4>定位加密位置</h4>全局搜索参数名 / 断点调试（Sources / 抓包对比），找到生成签名的函数。</div>
+      <div class="step"><h4>分析算法逻辑</h4>看是标准加密（MD5/AES/RSA）还是自定义；关注关键变量来源。</div>
+      <div class="step"><h4>复现或执行</h4>用 Python 重写算法，或用 <code class="inline">execjs</code> / Node.js 直接执行原 JS，或"补环境"让 JS 在 Node 中跑起来。</div>
+      <div class="step"><h4>hook 与自动化</h4>用 Fiddler/mitmproxy 拦截替换 JS，或用 <code class="inline">js hook</code> 固定关键函数输出，降低调试难度。</div>
+    </div>
+    <pre><code class="language-python">import execjs
+
+with open("sign.js", encoding="utf-8") as f:
+    ctx = execjs.compile(f.read())
+
+sign = ctx.call("getSign", "page=1&amp;size=20")  # 调用 JS 函数生成签名
+# 再把 sign 拼进请求参数</code></pre>
+
+    <div class="box warn">
+      <span class="bt">⚠️ 合法边界</span>
+      JS 逆向技术本身是中性的，但<strong>仅可用于你有授权的数据采集</strong>。绕过技术保护措施去抓取受保护数据，可能触犯《刑法》285 条。面试中谈逆向时要强调"在授权范围内"。
+    </div>
+
+    <h3>TLS / JA3 指纹（现代高级反爬）</h3>
+    <p>即使你伪造了 UA，服务器仍能通过 TLS 握手特征（JA3/JA4 指纹）识别出你是 Python 客户端。应对方案：<code class="inline">curl_cffi</code> 模拟真实浏览器的 TLS 指纹，这是 2026 年进阶爬虫的必备技能。</p>
+    <pre><code class="language-python">from curl_cffi import requests as cffi_requests
+
+resp = cffi_requests.get(
+    "https://example.com",
+    impersonate="chrome120",  # 模拟 Chrome 的 TLS 指纹
+)
+print(resp.status_code, resp.text[:100])</code></pre>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① 目标网站有哪些反爬？你分别怎么应对？（按上表分层作答，体现体系化思维）<br>
+      ② IP 被封了怎么排查和解决？（确认是否被封 → 降频/换 IP → 检查指纹/行为特征）<br>
+      ③ 遇到过 JS 加密参数吗？怎么处理的？（讲定位 → 分析 → 复现的完整流程）<br>
+      ④ 什么是 JA3 指纹？为什么 requests 会被识别？（TLS 握手特征差异，用 curl_cffi 模拟）<br>
+      ⑤ 验证码有哪些类型？分别怎么处理？（图形 OCR、滑块行为模拟、打码平台、无感复用 Cookie）
+    </div>
+  </section>
+
+  <!-- ============ Part 7 ============ -->
+  <section id="p7">
+    <div class="section-head">
+      <div class="badge">7</div>
+      <div><h2>存储与工程化部署</h2><div class="desc">从"能跑的脚本"到"可维护、可监控的生产系统"</div></div>
+    </div>
+
+    <h3>存储选型</h3>
+    <table>
+      <thead><tr><th>存储</th><th>适用数据</th><th>爬虫场景</th></tr></thead>
+      <tbody>
+        <tr><td>MySQL / PostgreSQL</td><td>结构化、需事务</td><td>业务数据落库、任务状态管理</td></tr>
+        <tr><td>MongoDB</td><td>半结构化、字段多变</td><td>网页原始 JSON、字段不固定的采集</td></tr>
+        <tr><td>Redis</td><td>高速缓存、队列、去重</td><td>请求队列、去重集合、代理池、限流计数</td></tr>
+        <tr><td>Elasticsearch</td><td>全文检索、海量文档</td><td>内容搜索、日志分析、去重相似度</td></tr>
+        <tr><td>对象存储（S3/OSS）</td><td>图片/文件</td><td>原始页面快照、媒体资源归档</td></tr>
+      </tbody>
+    </table>
+    <div class="box tip">
+      <span class="bt">💡 典型分层架构</span>
+      <strong>Redis</strong> 做调度队列与去重 → <strong>Spider</strong> 抓取 → 结构化数据入 <strong>MySQL</strong>，原始/非结构化入 <strong>MongoDB</strong> → 需检索的同步进 <strong>ES</strong>。消息队列（Kafka/RabbitMQ）用于爬虫与下游业务解耦。
+    </div>
+
+    <h3>去重策略（面试常考）</h3>
+    <ul>
+      <li><strong>URL 去重：</strong>Scrapy 请求指纹 / Redis set，最简单常用。</li>
+      <li><strong>内容去重：</strong>对正文做 SimHash / MinHash，识别"改标题的转载文"。</li>
+      <li><strong>布隆过滤器：</strong>海量 URL 去重，省内存（有误判率，可用 RedisBloom）。</li>
+    </ul>
+
+    <h3>调度与常驻运行</h3>
+    <ul>
+      <li><strong>crontab / APScheduler：</strong>定时触发抓取任务（轻量）。</li>
+      <li><strong>Celery + Beat：</strong>分布式任务队列，适合复杂调度与异步处理。</li>
+      <li><strong>scrapyd：</strong>Scrapy 项目的部署与定时调度 daemon。</li>
+    </ul>
+
+    <h3>Docker 部署要点</h3>
+    <pre><code class="language-python"># Dockerfile 示例（Scrapy 项目）
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["scrapy", "crawl", "product"]</code></pre>
+    <ul>
+      <li>用多阶段构建减小镜像体积；</li>
+      <li>配置数据卷持久化（Cookie、截图、日志）；</li>
+      <li>用 docker-compose 编排 Redis / MySQL / 爬虫服务；</li>
+      <li>日志统一收集到 ELK / Loki，便于排查封禁与异常。</li>
+    </ul>
+
+    <h3>可观测性：日志、监控、告警</h3>
+    <ul>
+      <li><strong>关键指标：</strong>请求成功率、响应码分布、每秒抓取量、被封 IP 数、入库量。</li>
+      <li><strong>告警：</strong>成功率骤降 / 长时间无数据时自动通知（邮件 / 钉钉 / 企业微信）。</li>
+      <li><strong>重试与幂等：</strong>失败请求持久化重试，入库做唯一键避免重复。</li>
+    </ul>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试高频问</span>
+      ① 爬虫任务如何定时调度？如何保证不重复、不遗漏？（APScheduler/Celery + 幂等 + 状态记录）<br>
+      ② 海量 URL 去重用什么？（Redis set / 布隆过滤器，讲清取舍）<br>
+      ③ 爬虫挂了怎么恢复？（断点续爬：持久化请求队列与进度）<br>
+      ④ 如何监控爬虫健康度？（成功率、QPS、被封率、告警机制）
+    </div>
+  </section>
+
+  <!-- ============ Part 8 ============ -->
+  <section id="p8">
+    <div class="section-head">
+      <div class="badge">8</div>
+      <div><h2>简历级实战项目</h2><div class="desc">3 个可直接写进简历的项目，含技术栈、亮点与量化话术</div></div>
+    </div>
+
+    <div class="box tip">
+      <span class="bt">💡 选项目的原则</span>
+      不要写"爬了某某网站"这种流水账。要体现<strong>工程复杂度</strong>：分布式、反爬对抗、数据质量、调度监控、性能数字。用 <strong>STAR + 量化指标</strong> 包装（QPS、数据量、成功率、提速倍数）。
+    </div>
+
+    <h3>项目一：电商商品价格监控系统 <span class="tag y">中高级</span></h3>
+    <div class="card">
+      <h4>技术栈</h4>
+      <p>Scrapy + scrapy-redis + MySQL + Redis + APScheduler + Docker + 简单可视化（FastAPI/ECharts）</p>
+    </div>
+    <ul>
+      <li><strong>需求：</strong>监控 N 个电商平台的商品价格/库存变化，价格低于阈值自动告警。</li>
+      <li><strong>难点与亮点：</strong>多站点适配器模式；代理 IP 池 + UA 轮换应对反爬；SKU 去重与价格历史时序存储；分布式抓取（3 节点）；定时增量更新。</li>
+      <li><strong>量化话术：</strong>"实现分布式采集，日均抓取 X 万条，成功率 98%，相比单机提速 3 倍；通过代理池与限速将 IP 封禁率降到 1% 以下。"</li>
+    </ul>
+
+    <h3>项目二：招聘/新闻信息聚合平台 <span class="tag y">中高级</span></h3>
+    <div class="card">
+      <h4>技术栈</h4>
+      <p>httpx/aiohttp + asyncio + MongoDB + Elasticsearch + Kafka + Celery</p>
+    </div>
+    <ul>
+      <li><strong>需求：</strong>聚合多来源岗位/资讯，去重、分类、全文检索，对外提供 API。</li>
+      <li><strong>难点与亮点：</strong>异步高并发抓取；SimHash 内容去重（识别跨站转载）；Kafka 解耦采集与清洗；ES 全文检索与聚合分析。</li>
+      <li><strong>量化话术：</strong>"异步架构下单机 QPS 达到 X，去重准确率 95%+，支撑 X 万条数据的秒级检索。"</li>
+    </ul>
+
+    <h3>项目三：动态渲染站点采集 & 反爬系统 <span class="tag r">进阶/高薪</span></h3>
+    <div class="card">
+      <h4>技术栈</h4>
+      <p>Playwright + curl_cffi + execjs/Node + mitmproxy + Redis + MySQL</p>
+    </div>
+    <ul>
+      <li><strong>需求：</strong>采集强反爬、数据由 JS 渲染的站点（在授权范围内）。</li>
+      <li><strong>难点与亮点：</strong>抓包定位真实接口；JS 签名参数逆向并复现；Playwright 浏览器池复用 + stealth 反检测；TLS 指纹模拟；验证码与登录态管理。</li>
+      <li><strong>量化话术：</strong>"通过接口直取替代页面渲染，性能提升 10 倍；逆向签名算法实现稳定自动采集，维护成本降低 70%。"</li>
+    </ul>
+
+    <div class="box interview">
+      <span class="bt">🎯 面试官会追问</span>
+      "这个项目你负责哪部分？遇到最难的问题是什么，怎么解决的？数据规模和性能数字是多少？为什么选这个技术栈？" —— 提前准备好每个项目的<strong>技术决策理由</strong>和<strong>真实数据</strong>，不要编造但要有数字。
+    </div>
+  </section>
+
+  <!-- ============ Part 9 ============ -->
+  <section id="p9">
+    <div class="section-head">
+      <div class="badge">9</div>
+      <div><h2>高频面试题库</h2><div class="desc">按主题分类，每题给出回答要点，用于自检与查漏</div></div>
+    </div>
+
+    <h3>A. 基础与网络</h3>
+    <ol>
+      <li><strong>一次 HTTP 请求包含哪些部分？常见状态码有哪些？</strong><br>请求行/头/体；2xx/3xx/4xx/5xx，重点说 301/302、403、429、500 的含义与爬虫处理。</li>
+      <li><strong>GET 与 POST 的区别？</strong><br>参数位置、语义、长度限制、安全性（都不是真正安全）、缓存行为。</li>
+      <li><strong>Cookie 与 Session 的区别和联系？</strong><br>Session 存服务端，Cookie 存客户端并携带 sessionid；爬虫如何维持登录态。</li>
+      <li><strong>HTTPS 原理简述？证书校验在爬虫中如何配置？</strong><br>非对称+对称加密混合；verify 参数、忽略证书的风险。</li>
+      <li><strong>什么是 HTTP/2？对爬虫有什么影响？</strong><br>多路复用、头部压缩、二进制帧；httpx 支持，指纹特征不同。</li>
+      <li><strong>requests 中 Session 的作用？</strong><br>连接复用（性能）、自动管理 Cookie。</li>
+      <li><strong>遇到 403/429 如何排查？</strong><br>UA/Referer/Cookie/频率/IP/指纹，逐层排查。</li>
+    </ol>
+
+    <h3>B. 解析与框架</h3>
+    <ol>
+      <li><strong>CSS 选择器与 XPath 的区别？各举一例。</strong><br>语法与能力差异，XPath 可轴选择，CSS 更简洁。</li>
+      <li><strong>BeautifulSoup 与 lxml 的区别？</strong><br>纯 Python vs C 实现，容错性 vs 速度，解析器选择。</li>
+      <li><strong>Scrapy 的架构和数据流？</strong><br>Engine/Scheduler/Downloader/Spider/Pipeline 及数据流转顺序。</li>
+      <li><strong>Scrapy 如何实现去重？</strong><br>请求指纹 + 集合；分布式用 Redis 共享集合。</li>
+      <li><strong>下载中间件与蜘蛛中间件的区别？</strong><br>生效阶段不同：请求/响应处理 vs spider 输入输出处理。</li>
+      <li><strong>Scrapy 中如何设置代理和 UA？</strong><br>在 Downloader Middleware 的 process_request 中修改 request.meta / headers。</li>
+      <li><strong>pipelines.py 中 process_item 为什么要 return item？</strong><br>链式传递，否则后续 Pipeline 收不到数据。</li>
+    </ol>
+
+    <h3>C. 异步与性能</h3>
+    <ol>
+      <li><strong>同步与异步爬虫的区别？为什么爬虫适合异步？</strong><br>I/O 密集型，等待时间可重叠，协程开销小。</li>
+      <li><strong>协程、线程、进程的区别？GIL 的影响？</strong><br>调度单位、内存开销、并行性；I/O 释放 GIL，协程更适合高并发 I/O。</li>
+      <li><strong>asyncio 中 gather 与 create_task 的区别？</strong><br>gather 聚合多个协程结果，create_task 创建可独立管理的任务。</li>
+      <li><strong>如何控制爬虫并发，避免打挂对方？</strong><br>Semaphore / 连接池上限 / DOWNLOAD_DELAY / 令牌桶限速 / AUTOTHROTTLE。</li>
+      <li><strong>如何提升爬虫性能？</strong><br>找接口替代渲染、异步并发、连接复用、减少解析开销、增量抓取。</li>
+    </ol>
+
+    <h3>D. 反爬与工程</h3>
+    <ol>
+      <li><strong>常见反爬手段及应对？</strong><br>按请求头/IP/验证码/JS/行为/指纹六类分层作答。</li>
+      <li><strong>代理 IP 池如何设计？</strong><br>来源、调度、健康检查、失败剔除、成本控制。</li>
+      <li><strong>遇到 JS 加密参数怎么办？</strong><br>抓包定位 → 调试分析 → Python 复现或 execjs 执行原 JS → 补环境。</li>
+      <li><strong>什么是 JA3/TLS 指纹？如何应对？</strong><br>TLS 握手特征识别客户端库；curl_cffi 模拟浏览器指纹。</li>
+      <li><strong>如何保证爬虫合规？</strong><br>robots/ToS、优先 API、最小必要、限速、脱敏、用途合法、停止机制。</li>
+      <li><strong>分布式爬虫如何做？</strong><br>scrapy-redis：Redis 共享队列与去重集合；多节点消费。</li>
+      <li><strong>爬虫挂了如何恢复？</strong><br>持久化请求队列与进度、断点续爬、幂等入库、失败重试。</li>
+      <li><strong>如何监控爬虫？</strong><br>成功率、QPS、被封率、入库量、告警。</li>
+    </ol>
+
+    <h3>E. 开放/场景题（体现经验）</h3>
+    <ol>
+      <li><strong>要抓一个从未见过的新网站，你的完整流程是什么？</strong><br>合规评估 → 抓包分析接口 → 判断静态/动态 → 选技术栈 → 小规模验证 → 反爬应对 → 工程化 → 监控。</li>
+      <li><strong>数据量从 10 万涨到 1000 万，你的架构怎么演进？</strong><br>单机→异步→分布式→队列解耦→存储分片→增量与去重优化。</li>
+      <li><strong>目标网站改版导致抓取失败，你怎么办？</strong><br>监控告警→定位变化→多重选择器兜底→优先接口→降低对 DOM 结构依赖。</li>
+      <li><strong>如何设计一个通用的爬虫平台？</strong><br>配置化/插件化、任务调度、代理与指纹服务、数据管道、监控与权限。</li>
+    </ol>
+  </section>
+
+  <!-- ============ Part 10 ============ -->
+  <section id="p10">
+    <div class="section-head">
+      <div class="badge">10</div>
+      <div><h2>8 周学习计划 & 资源</h2><div class="desc">按周推进，每周都有明确产出，8 周后具备求职能力</div></div>
+    </div>
+
+    <h3>8 周冲刺路线</h3>
+    <table>
+      <thead><tr><th>周次</th><th>主题</th><th>核心任务</th><th>产出</th></tr></thead>
+      <tbody>
+        <tr><td><strong>W1</strong></td><td>合规 + HTTP + 抓取库</td><td>读第 0~2 章；用 httpx 写 3 个抓取小脚本（含异步）</td><td>能并发抓取并正确解析响应</td></tr>
+        <tr><td><strong>W2</strong></td><td>解析 + 异步进阶</td><td>第 3 章；CSS/XPath 各练 20 个案例；封装通用解析函数</td><td>一个"列表+详情"的异步采集器</td></tr>
+        <tr><td><strong>W3</strong></td><td>Scrapy 基础</td><td>第 5 章；把 W2 的采集器改成 Scrapy 项目</td><td>可运行的 Scrapy 项目 + Pipeline 入库</td></tr>
+        <tr><td><strong>W4</strong></td><td>Scrapy 进阶</td><td>中间件、代理池 UA 池、限速重试、scrapy-redis</td><td>带反爬与分布式的 Scrapy 项目</td></tr>
+        <tr><td><strong>W5</strong></td><td>动态页面</td><td>第 4 章；Playwright 抓 2 个 SPA 站点，练习接口拦截</td><td>Playwright 采集脚本 + 反检测配置</td></tr>
+        <tr><td><strong>W6</strong></td><td>反爬对抗</td><td>第 6 章；搭建代理池，练习 JS 逆向与 curl_cffi</td><td>反爬应对工具箱 + 技术笔记</td></tr>
+        <tr><td><strong>W7</strong></td><td>存储与工程化</td><td>第 7 章；加 Redis/ES、Docker、定时调度、监控告警</td><td>完整可部署的系统 + Dockerfile</td></tr>
+        <tr><td><strong>W8</strong></td><td>项目打磨 + 面试</td><td>第 8~9 章；整理 2~3 个项目到 GitHub，刷面试题</td><td>简历项目 + GitHub + 面试问答准备</td></tr>
+      </tbody>
+    </table>
+    <div class="box ok">
+      <span class="bt">✅ 每周自检</span>
+      能否用自己的话讲清本周核心原理？能否不看资料重写核心代码？能否用一个量化数字描述本周产出？三个都能，才进入下一周。
+    </div>
+
+    <h3>推荐资源</h3>
+    <div class="grid">
+      <div class="card"><div class="ic">📚</div><h4>官方文档（首选）</h4><p>Scrapy、Playwright、httpx 官方文档永远是最新最权威的第一手资料。</p></div>
+      <div class="card"><div class="ic">🎯</div><h4>练习靶场</h4><p>scrape.center（爬虫练习平台）、各类公开 Demo 站点，按难度递进练习。</p></div>
+      <div class="card"><div class="ic">🔧</div><h4>工具</h4><p>Chrome DevTools（Network/Sources 调试）、mitmproxy、Fiddler、Postman、Charles、Node.js。</p></div>
+      <div class="card"><div class="ic">📦</div><h4>开源生态</h4><p>GitHub 搜索 awesome-python-webcrawling、Scrapy 插件、代理池、验证码识别项目，读源码学工程。</p></div>
+      <div class="card"><div class="ic">📖</div><h4>书籍</h4><p>《Python 网络爬虫权威指南》《Python 爬虫开发 从入门到实践》，配合官方文档食用。</p></div>
+      <div class="card"><div class="ic">🧩</div><h4>社区</h4><p>掘金/知乎/CSDN 的爬虫实战专栏、GitHub Issues、相关技术群，关注反爬新动向。</p></div>
+    </div>
+
+    <h3>最后：把这份手册用起来</h3>
+    <ul>
+      <li><strong>边学边写：</strong>每章的代码都亲手敲一遍并跑通，不要只看。</li>
+      <li><strong>建立作品集：</strong>把练习项目整理到 GitHub，写清 README（架构图、技术栈、数据规模）。</li>
+      <li><strong>刻意练习面试：</strong>把第 9 章每道题都用嘴说一遍，录音回听，查漏补缺。</li>
+      <li><strong>保持合规底线：</strong>技术越强，越要敬畏法律与边界，这是长期发展的护身符。</li>
+    </ul>
+
+  </section>
+
+
+
+
+  <div class="footer">
+    Python 现代爬虫 · 从入门到求职 —— 为有后端经验的你定制 · 2026
+  </div>
+
+  </div><!-- /wrap -->
+</div><!-- /main -->
+
+<button class="top-btn" id="topBtn" title="回到顶部">↑</button>
+
+<script>
+// 返回顶部
+const topBtn=document.getElementById('topBtn');
+window.addEventListener('scroll',()=>{topBtn.classList.toggle('show',window.scrollY>400)});
+topBtn.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+
+// 目录高亮
+const links=[...document.querySelectorAll('.sidebar a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const obs=new IntersectionObserver((es)=>{
+  es.forEach(e=>{if(e.isIntersecting){
+    links.forEach(l=>l.classList.remove('active'));
+    const cur=links.find(l=>l.getAttribute('href')==='#'+e.target.id);
+    if(cur)cur.classList.add('active');
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>obs.observe(s));
+
+// 轻量 Python 代码高亮（离线可用）
+function hl(code){
+  const tk=[];
+  code=code.replace(/(#[^\n]*)/g,m=>{tk.push('<span class="c-comment">'+m+'</span>');return '\u0000'+(tk.length-1)+'\u0000';});
+  code=code.replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g,m=>{tk.push('<span class="c-string">'+m+'</span>');return '\u0000'+(tk.length-1)+'\u0000';});
+  code=code.replace(/\b(def|class|import|from|as|if|else|elif|for|while|in|not|and|or|return|yield|await|async|with|try|except|finally|raise|lambda|None|True|False|self|pass|break|continue|is|global|nonlocal|print)\b/g,'<span class="c-keyword">$1</span>');
+  code=code.replace(/\u0000(\d+)\u0000/g,(m,i)=>tk[+i]);
+  code=code.replace(/\b(\d+)\b/g,'<span class="c-num">$1</span>');
+  return code;
+}
+document.querySelectorAll('pre code').forEach(c=>{c.innerHTML=hl(c.innerHTML)});
+</script>
+</body>
+</html>
