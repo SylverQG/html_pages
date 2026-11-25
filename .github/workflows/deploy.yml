@@ -14,6 +14,11 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# deploy-pages 要求 run 内产物名唯一，固定名 "github-pages" 遇到残留/重跑会报
+# "Multiple artifacts named github-pages"，用 run_id 保证每次运行的名字都不同
+env:
+  PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,7 +42,10 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
