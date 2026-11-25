@@ -24,6 +24,9 @@ jobs:
       - name: Generate index.html
         run: python3 _generator/generate_index.py
 
+      - name: Inject home buttons into pages
+        run: python3 _generator/inject_home_button.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
